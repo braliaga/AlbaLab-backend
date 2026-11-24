@@ -1,0 +1,76 @@
+# AlbaLab · backend completo con un solo comando:
+#   docker compose up --build -d      (levanta MySQL + 4 servicios)
+#   docker compose down               (apaga; los datos quedan en el volumen)
+#   docker compose down -v            (apaga y borra los datos)
+
+x-entorno-comun: &entorno-comun
+  JWT_SECRET: "albalab-clave-secreta-jwt-dsy1105-2026"
+  DB_PASSWORD: "albalab"
+
+x-depende-de-mysql: &depende-de-mysql
+  mysql:
+    condition: service_healthy
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: albalab-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: "albalab"
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-palbalab"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  ms-contenidos:
+    build: ./ms-contenidos
+    container_name: albalab-ms-contenidos
+    environment:
+      <<: *entorno-comun
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/bd_contenidos?createDatabaseIfNotExist=true"
+    ports:
+      - "9091:9091"
+    depends_on: *depende-de-mysql
+
+  ms-vinculacion:
+    build: ./ms-vinculacion
+    container_name: albalab-ms-vinculacion
+    environment:
+      <<: *entorno-comun
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/bd_vinculacion?createDatabaseIfNotExist=true"
+    ports:
+      - "9092:9092"
+    depends_on: *depende-de-mysql
+
+  ms-auth:
+    build: ./ms-auth
+    container_name: albalab-ms-auth
+    environment:
+      <<: *entorno-comun
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/bd_auth?createDatabaseIfNotExist=true"
+    ports:
+      - "9093:9093"
+    depends_on: *depende-de-mysql
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: albalab-api-gateway
+    environment:
+      <<: *entorno-comun
+      MS_CONTENIDOS_URI: "http://ms-contenidos:9091"
+      MS_VINCULACION_URI: "http://ms-vinculacion:9092"
+      MS_AUTH_URI: "http://ms-auth:9093"
+    ports:
+      - "9090:9090"
+    depends_on:
+      - ms-contenidos
+      - ms-vinculacion
+      - ms-auth
+
+volumes:
+  mysql-data:

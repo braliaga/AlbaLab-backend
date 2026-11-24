@@ -1,0 +1,9 @@
+package cl.duoc.albalab.contenidos.repository;
+
+import cl.duoc.albalab.contenidos.model.CasoExito;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface CasoExitoRepository extends JpaRepository<CasoExito, Long> {
+}

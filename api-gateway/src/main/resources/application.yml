@@ -1,0 +1,29 @@
+server:
+  port: 9090
+
+spring:
+  application:
+    name: api-gateway
+  main:
+    web-application-type: reactive
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: ms-auth
+              uri: ${MS_AUTH_URI:http://localhost:9093}
+              predicates:
+                - Path=/auth/**
+            - id: ms-vinculacion
+              uri: ${MS_VINCULACION_URI:http://localhost:9092}
+              predicates:
+                - Path=/solicitudes/**
+            - id: ms-contenidos
+              uri: ${MS_CONTENIDOS_URI:http://localhost:9091}
+              predicates:
+                - Path=/programas/**,/casos/**,/productos/**,/indicadores/**,/destinos/**
+
+# Mismo secreto que ms-auth. En Docker llega por la variable JWT_SECRET.
+jwt:
+  secret: ${JWT_SECRET:albalab-clave-secreta-jwt-dsy1105-2026}
